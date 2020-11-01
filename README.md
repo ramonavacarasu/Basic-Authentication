@@ -1,7 +1,7 @@
-### Registration - Login
+### User Registration and Login
 https://registration-login-bd7xznuu9.vercel.app
 
-### Login
+### Basic HTTP Authentication
 https://basic-authentication-angular.ramonavacarasu.vercel.app 
 
 # Basic Authentication Angular
