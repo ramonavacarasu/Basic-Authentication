@@ -12,13 +12,13 @@ import { fakeBackendProvider } from './helpers';
 
 import { BasicAuthInterceptor, ErrorInterceptor } from './helpers';
 import { HomeComponent } from './home';
-import { LoginComponent } from './login';
+import { AlertComponent } from './components/alert.component';
 
 @NgModule({
   declarations: [
     AppComponent,
     HomeComponent,
-    LoginComponent
+    AlertComponent
   ],
   imports: [
     BrowserModule,
