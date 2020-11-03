@@ -1,5 +1,5 @@
 ## Facebook Login
-https://facebook-login.ramonavacarasu.vercel.app/
+https://facebook-login.ramonavacarasu.vercel.app/account/login
 
 ## User Registration and Login
 https://registration-login-bd7xznuu9.vercel.app
