@@ -1,8 +1,10 @@
-### Login
-https://basic-authentication-angular.ramonavacarasu.vercel.app 
+## Facebook Login
+https://facebook-login.ramonavacarasu.vercel.app/
 
-# Basic Authentication Angular
+## User Registration and Login
+https://registration-login-bd7xznuu9.vercel.app
 
+##
 This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 9.0.1.
 
 ## Development server
