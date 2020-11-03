@@ -17,7 +17,11 @@ export class LoginComponent implements OnInit {
         private router: Router,
         private authenticationService: AuthenticationService,
         private alertService: AlertService
-    ) { }
+    ) {
+        if (this.authenticationService.userValue) {
+            this.router.navigate(['/']);
+        }
+    }
 
     ngOnInit() {
         this.form = this.formBuilder.group({
@@ -54,5 +58,9 @@ export class LoginComponent implements OnInit {
                     this.loading = false;
                 }
             });
+    }
+
+    loginWithFb() {
+        this.authenticationService.loginWithFb();
     }
 }

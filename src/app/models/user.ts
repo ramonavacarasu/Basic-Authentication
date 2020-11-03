@@ -4,5 +4,8 @@ export class User {
     password: string;
     firstName: string;
     lastName: string;
-    token: string;
+    facebookId: string;
+    name: string;
+    extraInfo: string;
+    token?: string;
 }

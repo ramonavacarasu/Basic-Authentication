@@ -24,6 +24,13 @@
                 </div>
             </div>
             <div class="form-group">
+                <label for="extraInfo">Extra Info</label>
+                <input type="text" formControlName="extraInfo" class="form-control" [ngClass]="{ 'is-invalid': submitted && f.extraInfo.errors }" />
+                <div *ngIf="submitted && f.extraInfo.errors" class="invalid-feedback">
+                    <div *ngIf="f.extraInfo.errors.required">Extra Info is required</div>
+                </div>
+            </div>
+            <div class="form-group">
                 <label for="password">Password</label>
                 <input type="password" formControlName="password" class="form-control" [ngClass]="{ 'is-invalid': submitted && f.password.errors }" />
                 <div *ngIf="submitted && f.password.errors" class="invalid-feedback">

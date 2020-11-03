@@ -6,6 +6,16 @@ a { cursor: pointer }
     overflow: hidden;
 }
 
+.btn-facebook {
+    background: #3B5998;
+    color: #fff;
+
+    &:hover {
+        color: #fff;
+        opacity: 0.8;
+    }
+}
+
 .btn-delete-user {
     width: 40px;
     text-align: center;

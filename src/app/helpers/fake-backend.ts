@@ -1,7 +1,7 @@
 ﻿import { Injectable } from '@angular/core';
 import { HttpRequest, HttpResponse, HttpHandler, HttpEvent, HttpInterceptor, HTTP_INTERCEPTORS } from '@angular/common/http';
-import { Observable, of, throwError } from 'rxjs';
-import { delay, materialize, dematerialize } from 'rxjs/operators';
+import { Observable, of, throwError, from } from 'rxjs';
+import { delay, materialize, dematerialize, concatMap } from 'rxjs/operators';
 
 //const users: User[] = [{ id: 1, username: 'ramona', password: 'password', firstName: 'Ramona', lastName: 'Vacarasu' }];
 const usersKey = 'registration-login';
@@ -10,14 +10,8 @@ let users = JSON.parse(localStorage.getItem(usersKey)) || [];
 @Injectable()
 export class FakeBackendInterceptor implements HttpInterceptor {
     intercept(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-        const { url, method, headers, body } = request;
 
-        /* wrap in delayed observable to simulate server api call
-        return of(null)
-            .pipe(mergeMap(handleRoute))
-            .pipe(materialize()) // call materialize and dematerialize to ensure delay even if an error is thrown (https://github.com/Reactive-Extensions/RxJS/issues/648)
-            .pipe(delay(500))
-            .pipe(dematerialize());*/
+        const { url, method, headers, body } = request;
 
         return handleRoute();
 
@@ -25,6 +19,8 @@ export class FakeBackendInterceptor implements HttpInterceptor {
             switch (true) {
                 case url.endsWith('/users/authenticate') && method === 'POST':
                     return authenticate();
+                case url.endsWith('/users/authenticatefb') && method === 'POST':
+                    return authenticateWithFb();
                 case url.endsWith('/users/register') && method === 'POST':
                     return register();
                 case url.endsWith('/users') && method === 'GET':
@@ -41,6 +37,53 @@ export class FakeBackendInterceptor implements HttpInterceptor {
             }    
         }
 
+        // authenticate with facebook
+
+        function authenticateWithFb() {
+            const { accessToken } = body;
+
+            return from(new Promise(resolve => {
+                fetch(`https://graph.facebook.com/v8.0/me?access_token=${accessToken}`)
+                    .then(response => resolve(response.json()));
+            })).pipe(concatMap((data: any) => {
+                if (data.error) return unauthorized(data.error.message);
+
+                let user = users.find(x => x.username === data.id);
+                if (!user) {
+                    // create new user if first time logging in
+                    user = {
+                        id: newUserId(),
+                        username: data.id,
+                        firstName: data.name,
+                        lastName: data.lastName,
+                        extraInfo: `This is some extra info about ${data.name} that is saved in the API: ${data.extraInfo}`
+                    }
+                    users.push(user);
+                    localStorage.setItem(usersKey, JSON.stringify(users));
+                }
+
+                return ok({
+                    ...user,
+                    token: generateJwtToken(user)
+                });
+            }));
+        }
+
+        function newUserId() {
+            return users.length ? Math.max(...users.map(x => x.id)) + 1 : 1;
+        }
+
+        function generateJwtToken(account) {
+            // create token that expires in 15 minutes
+            const tokenPayload = { 
+                exp: Math.round(new Date(Date.now() + 15*60*1000).getTime() / 1000),
+                id: account.id
+            }
+            return `fake-jwt-token.${btoa(JSON.stringify(tokenPayload))}`;
+        }
+
+
+        
         // route functions
 
         function authenticate() {
@@ -48,11 +91,12 @@ export class FakeBackendInterceptor implements HttpInterceptor {
             const user = users.find(x => x.username === username && x.password === password);
             if (!user) return error('Username or password is incorrect');
             return ok({
-               /* id: user.id,
+                id: newUserId,
                 username: user.username,
                 firstName: user.firstName,
-                lastName: user.lastName */
-                ...basicDetails(user),
+                lastName: user.lastName,
+                extraInfo: user.extraInfo,
+               // ...basicDetails(user),
                 token: 'fake-jwt-token'
             })
         }
@@ -73,11 +117,14 @@ export class FakeBackendInterceptor implements HttpInterceptor {
 
         function getUsers() {
             if (!isLoggedIn()) return unauthorized();
-            return ok(users.map(x => basicDetails(x)));
+            return ok(users);
         }
 
         function getUserById() {
             if (!isLoggedIn()) return unauthorized();
+
+            let user = users.find(x => x.id === idFromUrl());
+            return ok(user);
 
         }
 
@@ -109,11 +156,6 @@ export class FakeBackendInterceptor implements HttpInterceptor {
 
         // helper functions
 
-        function basicDetails(user) {
-            const { id, username, firstName, lastName } = user;
-            return { id, username, firstName, lastName };
-        }
-
         function ok(body?) {
             return of(new HttpResponse({ status: 200, body }))
             .pipe(delay(500)); // delay observable to simulate server api call
@@ -125,14 +167,14 @@ export class FakeBackendInterceptor implements HttpInterceptor {
                 .pipe(materialize(), delay(500), dematerialize());
         }
 
-        function unauthorized() {
+        function unauthorized(message = 'Unauthorized') {
             return throwError({ status: 401, error: { message: 'Unauthorised' } })
                 .pipe(materialize(), delay(500), dematerialize());
         }
 
         function isLoggedIn() {
             //return headers.get('Authorization') === `Basic ${window.btoa('ramona:password')}`;
-            return headers.get('Authorization') === 'Bearer fake-jwt-token';
+            return headers.get('Authorization')?.startsWith('Bearer fake-jwt-token');
         }
 
         function idFromUrl() {
