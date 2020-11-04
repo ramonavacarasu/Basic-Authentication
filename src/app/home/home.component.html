@@ -2,7 +2,8 @@
     <div class="container">
         <h1>Hi {{user.firstName}}!</h1>
         <p>You're logged!!</p>
-        <p><a routerLink="/users">Manage Users</a></p>
+        <p>Your role is: <strong>{{user.role}}</strong>.</p>
+        <p>This page can be accessed by <u>all authenticated users</u>.</p>
     </div>
 </div>
 

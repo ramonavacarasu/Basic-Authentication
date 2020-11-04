@@ -1,1 +1,3 @@
-﻿export * from './home.component';
+import { from } from "rxjs";
+
+export * from './home.component';

@@ -1,7 +1,7 @@
 <nav class="navbar navbar-expand navbar-dark bg-dark" *ngIf="user">
   <div class="navbar-nav">
       <a class="nav-item nav-link" routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">Home</a>
-      <a class="nav-item nav-link" routerLink="/users" routerLinkActive="active">Users</a>
+      <a class="nav-item nav-link" routerLink="/users" routerLinkActive="active" *ngIf="isAdmin">Admin</a>
       <a class="nav-item nav-link" (click)="logout()">Logout</a>
   </div>
 </nav>

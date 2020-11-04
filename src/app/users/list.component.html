@@ -1,4 +1,15 @@
-﻿<h1>Users</h1>
+﻿<h1>Admin</h1>
+<div class="card m-5">
+    <h4 class="card-header">Admin</h4>
+    <div class="card-body">
+        <p>This page can be accessed <u>only by administrators</u>.</p>
+        <p class="mb-1">All users from secure (admin only) api end point:</p>
+        <div *ngIf="loading" class="spinner-border spinner-border-sm"></div>
+        <ul *ngIf="users">
+            <li *ngFor="let user of users">{{user.firstName}} {{user.lastName}}</li>
+        </ul>
+    </div>
+</div>
 <a routerLink="add" class="btn btn-sm btn-success mb-2">Add User</a>
 <table class="table table-striped">
     <thead>
@@ -7,7 +18,8 @@
             <th style="width: 15%">First Name</th>
             <th style="width: 15%">Last Name</th>
             <th style="width: 15%">Username</th>
-            <th style="width: 40%">Extra Info</th>
+            <th style="width: 30%">Extra Info</th>
+            <th style="width: 10%">Role</th>
             <th style="width: 10%"></th>
         </tr>
     </thead>
@@ -18,6 +30,7 @@
             <td>{{user.lastName}}</td>
             <td>{{user.username}}</td>
             <td>{{user.extraInfo}}</td>
+            <td>{{user.role}}</td>
             <td style="white-space: nowrap">
                 <a routerLink="edit/{{user.id}}" class="btn btn-sm btn-primary mr-1">Edit</a>
                 <button (click)="deleteUser(user.id)" class="btn btn-sm btn-danger btn-delete-user" [disabled]="user.isDeleting">

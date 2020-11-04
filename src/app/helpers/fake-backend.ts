@@ -2,10 +2,17 @@
 import { HttpRequest, HttpResponse, HttpHandler, HttpEvent, HttpInterceptor, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { Observable, of, throwError, from } from 'rxjs';
 import { delay, materialize, dematerialize, concatMap } from 'rxjs/operators';
+import { Role } from '../models';
 
 //const users: User[] = [{ id: 1, username: 'ramona', password: 'password', firstName: 'Ramona', lastName: 'Vacarasu' }];
 const usersKey = 'registration-login';
-let users = JSON.parse(localStorage.getItem(usersKey)) || [];
+//let users = JSON.parse(localStorage.getItem(usersKey)) || [];
+
+let users = [
+    { id: 1, username: 'Ramona', password: 'Ramona', firstName: 'Ramona', lastName: 'Vacarasu', extraInfo: 'Some info', role: Role.Admin },
+    { id: 2, username: 'Raluca', password: 'Raluca', firstName: 'Raluca', lastName: 'Vacarasu', extraInfo: 'Some info', role: Role.User },
+    { id: 3, username: 'Bogdan', password: 'Bogdan', firstName: 'Bogdan', lastName: 'Enache', extraInfo: 'Some info about Bogdan', role: Role.User },
+];
 
 @Injectable()
 export class FakeBackendInterceptor implements HttpInterceptor {
@@ -49,14 +56,21 @@ export class FakeBackendInterceptor implements HttpInterceptor {
                 if (data.error) return unauthorized(data.error.message);
 
                 let user = users.find(x => x.username === data.id);
+
                 if (!user) {
+
+                    let fullName = data.name;
+                    let partsName = fullName.split(' ');
+
                     // create new user if first time logging in
                     user = {
-                        id: newUserId(),
+                        id: users.length ? Math.max(...users.map(x => x.id)) + 1 : 1,
                         username: data.id,
-                        firstName: data.name,
-                        lastName: data.lastName,
-                        extraInfo: `This is some extra info about ${data.name} that is saved in the API: ${data.extraInfo}`
+                        password: data.password,
+                        firstName: partsName[0],
+                        lastName: partsName[1],
+                        extraInfo: `This is some extra info about ${fullName} that is saved in the API: ${data.extraInfo}`,
+                        role: Role.User
                     }
                     users.push(user);
                     localStorage.setItem(usersKey, JSON.stringify(users));
@@ -69,10 +83,7 @@ export class FakeBackendInterceptor implements HttpInterceptor {
             }));
         }
 
-        function newUserId() {
-            return users.length ? Math.max(...users.map(x => x.id)) + 1 : 1;
-        }
-
+      
         function generateJwtToken(account) {
             // create token that expires in 15 minutes
             const tokenPayload = { 
@@ -82,7 +93,6 @@ export class FakeBackendInterceptor implements HttpInterceptor {
             return `fake-jwt-token.${btoa(JSON.stringify(tokenPayload))}`;
         }
 
-
         
         // route functions
 
@@ -91,24 +101,28 @@ export class FakeBackendInterceptor implements HttpInterceptor {
             const user = users.find(x => x.username === username && x.password === password);
             if (!user) return error('Username or password is incorrect');
             return ok({
-                id: newUserId,
+                id: user.id,
                 username: user.username,
                 firstName: user.firstName,
                 lastName: user.lastName,
                 extraInfo: user.extraInfo,
+                role: user.role,
                // ...basicDetails(user),
-                token: 'fake-jwt-token'
+                token: `fake-jwt-token.${user.id}`
             })
         }
 
         function register() {
+
             const user = body;
 
             if (users.find(x => x.username === user.username)) {
                 return  error('Username "' + user.username + '" is already taken')
             }
 
-            user.id = user.length ? Math.max(...users.map(x => x.id)) + 1 : 1;
+            user.id = users.length ? Math.max(...users.map(x => x.id)) + 1 : 1;
+            user.role = Role.User;
+            user.extraInfo = 'Some info about ' + user.username + ' .'
             users.push(user);
             localStorage.setItem(usersKey, JSON.stringify(users));
             return ok();
@@ -116,12 +130,16 @@ export class FakeBackendInterceptor implements HttpInterceptor {
 
 
         function getUsers() {
-            if (!isLoggedIn()) return unauthorized();
+            //if (!isLoggedIn()) return unauthorized();
+            if (!isAdmin()) return unauthorized();
             return ok(users);
         }
 
         function getUserById() {
             if (!isLoggedIn()) return unauthorized();
+
+            // only admins can access other user records
+            if (!isAdmin() && currentUser().id !== idFromUrl()) return unauthorized();
 
             let user = users.find(x => x.id === idFromUrl());
             return ok(user);
@@ -161,20 +179,29 @@ export class FakeBackendInterceptor implements HttpInterceptor {
             .pipe(delay(500)); // delay observable to simulate server api call
         }
 
-        // call materialize and dematerialize to ensure delay even if an error is thrown (https://github.com/Reactive-Extensions/RxJS/issues/648);
-        function error(message) {
-            return throwError({ error: { message } })
-                .pipe(materialize(), delay(500), dematerialize());
-        }
-
         function unauthorized(message = 'Unauthorized') {
             return throwError({ status: 401, error: { message: 'Unauthorised' } })
+                .pipe(materialize(), delay(500), dematerialize()); // call materialize and dematerialize to ensure delay even if an error is thrown (https://github.com/Reactive-Extensions/RxJS/issues/648);
+        }
+
+        function error(message) {
+            return throwError({ status: 400, error: { message } })
                 .pipe(materialize(), delay(500), dematerialize());
         }
 
         function isLoggedIn() {
             //return headers.get('Authorization') === `Basic ${window.btoa('ramona:password')}`;
             return headers.get('Authorization')?.startsWith('Bearer fake-jwt-token');
+        }
+
+        function isAdmin() {
+            return isLoggedIn() && currentUser().role === Role.Admin;
+        }
+
+        function currentUser() {
+            if (!isLoggedIn()) return;
+            const id = parseInt(headers.get('Authorization').split('.')[1]);
+            return users.find(x => x.id === id)
         }
 
         function idFromUrl() {
