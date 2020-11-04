@@ -1,8 +1,6 @@
-## Facebook Login
-https://facebook-login.ramonavacarasu.vercel.app/
 
-## User Registration and Login
-https://registration-login-bd7xznuu9.vercel.app
+## User Registration and Login • Facebook Login  • Role based authorization
+https://role-based-auth.ramonavacarasu.vercel.app
 
 ##
 This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 9.0.1.
